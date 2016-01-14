@@ -1,0 +1,31 @@
+{
+  "name": "circlejams",
+  "version": "1.0.0",
+  "description": "If your name is ____, jump up and down!",
+  "main": "index.js",
+  "scripts": {
+    "test": "make test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:jimkang/circlejams.git"
+  },
+  "keywords": [],
+  "author": "Jim Kang",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jimkang/circlejams/issues"
+  },
+  "homepage": "https://github.com/jimkang/circlejams",
+  "devDependencies": {
+    "tape": "^3.0.3"
+  },
+  "dependencies": {
+    "async": "^0.9.0",
+    "call-next-tick": "^1.1.2",
+    "lodash.pluck": "^3.1.2",
+    "probable": "^1.8.0",
+    "twit": "^1.1.20",
+    "post-tweet-chain": "^1.0.0"
+  }
+}
