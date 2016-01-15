@@ -33,7 +33,7 @@ Usage
 With Docker:
 
     docker run -v $(HOMEDIR)/config:/usr/src/app/config \
-        jkang/circlejams make run
+        jkang/circlejams node post-verse.js
 
 Tests
 -----
