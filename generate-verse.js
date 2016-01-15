@@ -1,9 +1,14 @@
+var config = require('./config/config');
 var probable = require('probable');
 var callNextTick = require('call-next-tick');
 var getRandomVerbs = require('./get-random-verbs');
 var changeCase = require('change-case');
+var WanderGoogleNgrams = require('wander-google-ngrams');
+var createIsCool = require('iscool');
 
-var exhortationTable = probable.createRangeTable([
+var iscool = createIsCool();
+
+var fixedExhortationTable = probable.createRangeTable([
   [
     [0, 3],
     {
@@ -27,6 +32,12 @@ var exhortationTable = probable.createRangeTable([
   ]
 ]);
 
+var exhortationTypeTable = probable.createTableFromDef({
+  '0': 'fixed',
+  '1': 'random-verb-fixed-elaboration',
+  '2': 'random-verb-ngram-elaboration'
+});
+
 function generateVerse(opts, done) {
   var name;
 
@@ -36,11 +47,12 @@ function generateVerse(opts, done) {
 
   var exhortation;
 
-  if (probable.roll(2) === 0) {
-    getRandomVerbs(formatAsExhortation);
+  var exhortationType = exhortationTypeTable.roll();
+  if (exhortationType === 'fixed') {
+    callNextTick(formatVerse, null, fixedExhortationTable.roll());
   }
   else {
-    callNextTick(formatVerse, null, exhortationTable.roll());
+    getRandomVerbs(formatAsExhortation);
   }
 
   function formatAsExhortation(error, verbs) {
@@ -48,15 +60,28 @@ function generateVerse(opts, done) {
     if (error) {
       done(error);
     }
+    else if (!verbs) {
+      done(new Error('Could not get any verbs.'));
+    }
     else {
-      if (verbs.length > 0) {
+      getActionElaboration(
+        exhortationType, verbs[0], addElaborationAndConclusion
+      );
+    }
+
+    function addElaborationAndConclusion(error, elaboration) {
+      if (error) {
+        done(error);
+      }
+      else {
         exhortation.action = verbs[0];
-        exhortation.action += ' ' + getActionElaboration();
+        exhortation.action += ' ' + elaboration;
+
+        if (verbs.length > 1) {
+          exhortation.conclusion = `Then ${verbs[1]}! Right back down.`;
+        }
+        formatVerse(error, exhortation);
       }
-      if (verbs.length > 1) {
-        exhortation.conclusion = `Then ${verbs[1]}! Right back down.`;
-      }
-      formatVerse(error, exhortation);
     }
   }
 
@@ -80,28 +105,71 @@ function generateVerse(opts, done) {
   }
 }
 
-function getActionElaboration() {
-  return probable.roll(2) === 0 ? 'all around' : 'up and down';
+function getActionElaboration(exhortationType, verb, done) {
+  if (exhortationType === 'random-verb-ngram-elaboration') {
+    getNgramElaboration(verb, done);
+  }
+  else {
+    // 'random-verb-fixed-elaboration'
+    callNextTick(
+      done, null, probable.roll(2) === 0 ? 'all around' : 'up and down'
+    );
+  }
 }
 
-function spin(name) {
-  return [
-    `If your name is @${screenName}, jump up and down!`,
-    `Jump up and down!`,
-    `Jump up and down!`,
-    `If your name is @${screenName}, jump up and down!`,
-    `Then sit – right back down.`
-  ];
-}
+function getNgramElaboration(verb, done) {
+  var createWanderStream = WanderGoogleNgrams({
+    wordnikAPIKey: config.wordnikAPIKey
+  });
 
-function touch(name) {
-  return [
-    `If your name is @${screenName}, jump up and down!`,
-    `Jump up and down!`,
-    `Jump up and down!`,
-    `If your name is @${screenName}, jump up and down!`,
-    `Then sit – right back down.`
-  ];
+  var opts = {
+    word: verb,
+    direction: 'forward',
+    repeatLimit: 1,
+    tryReducingNgramSizeAtDeadEnds: true,
+    shootForASentence: true,
+    maxWordCount: 20,
+    forwardStages: [
+      {
+        name: 'pushedVerb',
+        needToProceed: ['noun', 'pronoun', 'noun-plural', 'adjective'],
+        lookFor: '*_NOUN',
+        posShouldBeUnambiguous: true
+      },
+      {
+        name: 'done'
+      }
+    ]
+  };
+  var stream = createWanderStream(opts);
+  var phrase = '';
+
+  stream.on('error', reportError);
+  stream.on('end', passPhrase);
+  stream.on('data', saveWord);
+
+  function saveWord(word) {
+    if (word !== verb) {
+      if (!iscool(word)) {
+        console.log('Uncool word:', word);
+      }
+      else {
+        if (phrase.length > 0) {
+          phrase += ' ';
+        }
+        phrase += word;
+      }
+    }
+  }
+
+  function reportError(error) {
+    // Don't stop everything for a stream error.
+    console.log(error);
+  }
+
+  function passPhrase() {
+    done(null, phrase);
+  }
 }
 
 module.exports = generateVerse;
