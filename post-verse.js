@@ -17,9 +17,9 @@ var twit = new Twit(config.twitter);
 async.waterfall(
   [
     getFollowerIds,
-    getFollowers,
-    getScreenNames,
-    pickNextScreenName,
+    pickFollowerId,
+    getFollower,
+    getScreenName,
     composeVerse,
     postTweet
   ],
@@ -30,20 +30,19 @@ function getFollowerIds(done) {
   twit.get('followers/ids', done);
 }
 
-function getFollowers(body, res, done) {
+function pickFollowerId(body, res, done) {
+  callNextTick(done, null, probable.pickFromArray(body.ids));
+}
+
+function getFollower(id, done) {
   var lookupOpts = {
-    user_id: body.ids.join(',')
+    user_id: id
   };
   twit.post('users/lookup', lookupOpts, done);
 }
 
-function getScreenNames(users, res, done) {
-  callNextTick(done, null, pluck(users, 'screen_name'));
-}
-
-function pickNextScreenName(screenNames, done) {
-  // TODO: Maybe find the next one after the one that was just posted?
-  callNextTick(done, null, probable.pickFromArray(screenNames));
+function getScreenName(body, res, done) {
+  callNextTick(done, null, body[0].screen_name);
 }
 
 function composeVerse(screenName, done) {
