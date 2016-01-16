@@ -20,11 +20,9 @@ function LastTurnRecord(opts) {
   }
 
   function getLastTurnDateForUser(userId, done) {
-    debugger;
     turns.get(userId, reconstituteDate);
 
     function reconstituteDate(error, dateString) {
-      debugger;
       if (error) {
         done(error);
       }
@@ -35,11 +33,9 @@ function LastTurnRecord(opts) {
   }
 
   function userDidHaveATurnRecently(userId, span, spanUnit, done) {
-    debugger;
     getLastTurnDateForUser(userId, compareDateToSpan);
 
     function compareDateToSpan(error, date) {
-      debugger;
       if (error) {
         if (error.type === 'NotFoundError') {
           done(null, false);
@@ -49,8 +45,10 @@ function LastTurnRecord(opts) {
         }
       }
       else {
-        var nTimeAgo = moment().subtract(span, spanUnit);
-        done(null, (moment(date).isBefore(nTimeAgo)));
+        var earliestTimeThatCountsAsRecent = moment().subtract(span, spanUnit);
+        var lastTurnTime = (moment(date));
+
+        done(null, lastTurnTime.isAfter(earliestTimeThatCountsAsRecent));
       }
     }
   }

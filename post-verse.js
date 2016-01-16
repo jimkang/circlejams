@@ -51,7 +51,9 @@ function pickFollowerId(body, res, done) {
       ids.splice(ids.indexOf(id), 1);
       if (ids.length > 0) {
         id = probable.pickFromArray(ids).toString();
-        callNextTick(lastTurnRecord.hadATurnRecently, id, 1, 'd', decideToUse);
+        callNextTick(
+          lastTurnRecord.userDidHaveATurnRecently, id, 1, 'd', decideToUse
+        );
       }
       else {
         done(new Error('Everyone has had a turn recently.'));
