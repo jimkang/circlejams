@@ -33,9 +33,9 @@ var fixedExhortationTable = probable.createRangeTable([
 ]);
 
 var exhortationTypeTable = probable.createTableFromDef({
-  '0-1': 'fixed',
-  '2': 'random-verb-fixed-elaboration',
-  '3': 'random-verb-ngram-elaboration'
+  '0': 'fixed',
+  '1': 'random-verb-fixed-elaboration',
+  '2': 'random-verb-ngram-elaboration'
 });
 
 function generateVerse(opts, done) {
