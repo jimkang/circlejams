@@ -6,6 +6,13 @@ var pluck = require('lodash.pluck');
 var probable = require('probable');
 var postTweetChain = require('post-tweet-chain');
 var generateVerse = require('./generate-verse');
+var LastTurnRecord = require('./last-turn-record');
+
+var lastTurnRecord = LastTurnRecord({
+  dbLocation: __dirname + '/data/last-turns.db'
+});
+
+var callOutId;
 
 var dryRun = false;
 if (process.argv.length > 2) {
@@ -31,18 +38,46 @@ function getFollowerIds(done) {
 }
 
 function pickFollowerId(body, res, done) {
-  callNextTick(done, null, probable.pickFromArray(body.ids));
+  var ids = body.ids.slice();
+  var id = probable.pickFromArray(ids).toString();
+  lastTurnRecord.userDidHaveATurnRecently(id, 1, 'd', decideToUse);
+
+  function decideToUse(error, hadATurnRecently) {
+    if (error) {
+      done(error);
+    }
+    else if (hadATurnRecently) {
+      console.log(id, 'had a turn recently. Trying again.');
+      ids.splice(ids.indexOf(id), 1);
+      if (ids.length > 0) {
+        id = probable.pickFromArray(ids).toString();
+        callNextTick(lastTurnRecord.hadATurnRecently, id, 1, 'd', decideToUse);
+      }
+      else {
+        done(new Error('Everyone has had a turn recently.'));
+      }
+    }
+    else {
+      callOutId = id;
+      done()
+    }
+  }
 }
 
-function getFollower(id, done) {
+function getFollower(done) {
   var lookupOpts = {
-    user_id: id
+    user_id: callOutId
   };
   twit.post('users/lookup', lookupOpts, done);
 }
 
 function getScreenName(body, res, done) {
-  callNextTick(done, null, body[0].screen_name);
+  if (Array.isArray(body) && body.length > 0) {
+    callNextTick(done, null, body[0].screen_name);
+  }
+  else {
+    callNextTick(done, new Error('Could not find screen_name.'));
+  }
 }
 
 function composeVerse(screenName, done) {
@@ -73,5 +108,22 @@ function wrapUp(error, data) {
     if (data) {
       console.log('data:', data);
     }
+  }
+  else {
+    // Technically, the user wasn't replied to, but good enough.
+    lastTurnRecord.recordTurn(callOutId, new Date(), reportRecording);
+  }
+}
+
+function reportRecording(error) {
+  if (error) {
+    console.log(error, error.stack);
+
+    if (data) {
+      console.log('data:', data);
+    }
+  }
+  else {
+    console.log('Recorded turn for', callOutId);
   }
 }
