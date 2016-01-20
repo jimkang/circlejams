@@ -52,7 +52,7 @@ function pickFollowerId(body, res, done) {
       if (ids.length > 0) {
         id = probable.pickFromArray(ids).toString();
         callNextTick(
-          lastTurnRecord.userDidHaveATurnRecently, id, 1, 'd', decideToUse
+          lastTurnRecord.userDidHaveATurnRecently, id, 2, 'd', decideToUse
         );
       }
       else {
