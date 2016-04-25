@@ -1,9 +1,13 @@
 HOMEDIR = $(shell pwd)
-SSHCMD = ssh $(SMUSER)@smidgeo-headporters
+SERVER = smidgeo-headporters
+SSHCMD = ssh $(SMUSER)@$:(SERVER)
 PROJECTNAME = circlejams
 APPDIR = /var/apps/$(PROJECTNAME)
 
-pushall: sync restart-remote
+# Many of these targets need the SMUSER environment to be defined, which should be the
+# username of the user on SERVER that has the permissions to execute these operations.
+
+pushall: sync
 	git push origin master
 
 sync:
