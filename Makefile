@@ -1,28 +1,16 @@
-create-docker-machine:
-	docker-machine create --driver virtualbox dev
+HOMEDIR = $(shell pwd)
+SSHCMD = ssh $(SMUSER)@smidgeo-headporters
+PROJECTNAME = circlejams
+APPDIR = /var/apps/$(PROJECTNAME)
 
-stop-docker-machine:
-	docker-machine stop dev
-
-start-docker-machine:
-	docker-machine start dev
-
-# connect-to-docker-machine:
-	# eval "$(docker-machine env dev)"
-
-build-docker-image:
-	docker build -t jkang/circlejams .
-
-push-docker-image: build-docker-image
-	docker push jkang/circlejams
-
-run-docker-image:
-	docker run -v $(HOMEDIR)/config:/usr/src/app/config \
-		-v $(HOMEDIR)/data:/usr/src/app/data \
-		jkang/circlejams node post-verse.js
-
-pushall: push-docker-image
+pushall: sync restart-remote
 	git push origin master
 
-followback:
-	node followback.js
+sync:
+	rsync -a $(HOMEDIR) $(SMUSER)@smidgeo-headporters:/var/apps/ --exclude node_modules/ --exclude data/
+	ssh $(SMUSER)@smidgeo-headporters "cd /var/apps/$(PROJECTNAME) && npm install"
+
+set-permissions:
+	$(SSHCMD) "chmod 777 -R $(APPDIR)/data"
+
+update-remote: sync set-permissions
