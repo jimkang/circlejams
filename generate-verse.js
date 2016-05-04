@@ -13,21 +13,51 @@ var fixedExhortationTable = probable.createRangeTable([
     [0, 3],
     {
       action: 'jump up and down',
-      conclusion: 'Then sit – right back down.'
+      conclusion: 'Then sit – right back down.',
+      formatter: formatVerse
     }
   ],
   [
     [4, 4],
     {
       action: 'spin all around',
-      conclusion: 'Then sit – right back down.'
+      conclusion: 'Then sit – right back down.',
+      formatter: formatVerse
     }
   ],
   [
     [5, 5],
     {
       action: 'touch the ground',
-      conclusion: 'Then sit! Right back down.'
+      conclusion: 'Then sit! Right back down.',
+      formatter: formatVerse
+    }
+  ],
+  [
+    [6, 7],
+    {
+      verb: 'jump',
+      pastTenseVerb: 'jumped',
+      adverb: 'high',
+      formatter: formatHaveAFriendVerse
+    }
+  ],
+  [
+    [8, 8],
+    {
+      verb: 'dance',
+      pastTenseVerb: 'danced',
+      adverb: 'great',
+      formatter: formatHaveAFriendVerse
+    }
+  ],
+  [
+    [9, 9],
+    {
+      verb: 'scream',
+      pastTenseVerb: 'screamed',
+      adverb: 'piercingly',
+      formatter: formatHaveAFriendVerse
     }
   ]
 ]);
@@ -49,7 +79,8 @@ function generateVerse(opts, done) {
 
   var exhortationType = exhortationTypeTable.roll();
   if (exhortationType === 'fixed') {
-    callNextTick(formatVerse, null, fixedExhortationTable.roll());
+    var fixedExhortationKit = fixedExhortationTable.roll();
+    callNextTick(fixedExhortationKit.formatter, null, name, fixedExhortationKit, done);
   }
   else {
     getRandomVerbs(formatAsExhortation);
@@ -80,29 +111,52 @@ function generateVerse(opts, done) {
         if (verbs.length > 1) {
           exhortation.conclusion = `Then ${verbs[1]}! Right back down.`;
         }
-        formatVerse(error, exhortation);
+        formatVerse(error, name, exhortation, done);
       }
     }
-  }
+  }  
+}
 
-  function formatVerse(error, exhortation) {
-    var verse;
+function formatVerse(error, name, exhortation, done) {
+  var verse;
 
-    if (error) {
-      done(error);
-    }
-    else {
-      var actionSentence = changeCase.upperCaseFirst(`${exhortation.action}!`);
-      verse = [
-        `♪ If your name is @${name}, ${exhortation.action}!`,
-        actionSentence,
-        actionSentence,
-        `If your name is @${name}, ${exhortation.action}!`,
-        `${exhortation.conclusion} ♪`
-      ];
-    }
-    done(error, verse);
+  if (error) {
+    done(error);
   }
+  else {
+    var actionSentence = changeCase.upperCaseFirst(`${exhortation.action}!`);
+    verse = [
+      `♪ If your name is @${name}, ${exhortation.action}!`,
+      actionSentence,
+      actionSentence,
+      `If your name is @${name}, ${exhortation.action}!`,
+      `${exhortation.conclusion} ♪`
+    ];
+  }
+  done(error, verse);
+}
+
+function formatHaveAFriendVerse(error, name, kit, done) {
+  if (error) {
+    done(error);
+  }
+  else {
+    var friendElaboration = probable.pickFromArray([
+      'who\'s pretty cool',
+      'in Toddler 1',
+      'in Toddler 2'
+    ]);
+
+    var verb = kit.verb;
+    var capsVerb = changeCase.upperCaseFirst(verb);
+    var verse = [
+      `♪ I have friend ${friendElaboration}, and @${name} is their na-aaaame!`,
+      `${capsVerb}! ${capsVerb}! ${capsVerb} ${verb} ${verb}!`,
+      `${capsVerb}! ${capsVerb}! ${capsVerb} ${verb} ${verb}!`,
+      `@${name} ${kit.pastTenseVerb} so ${kit.adverb}! ♪`
+    ];
+  }
+  done(error, verse);
 }
 
 function getActionElaboration(exhortationType, verb, done) {

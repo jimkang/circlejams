@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/jimkang/circlejams",
   "devDependencies": {
+    "longjohn": "^0.2.11",
     "tape": "^3.0.3"
   },
   "dependencies": {
@@ -34,6 +35,6 @@
     "probable": "^1.8.0",
     "twit": "^1.1.20",
     "wander-google-ngrams": "^2.3.0",
-    "wordnok": "^3.1.0"
+    "wordnok": "^3.2.0"
   }
 }

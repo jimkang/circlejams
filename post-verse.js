@@ -1,3 +1,4 @@
+// require('longjohn');
 var config = require('./config/config');
 var callNextTick = require('call-next-tick');
 var Twit = require('twit');
@@ -61,7 +62,7 @@ function pickFollowerId(body, res, done) {
     }
     else {
       callOutId = id;
-      done()
+      done();
     }
   }
 }
